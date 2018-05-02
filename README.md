@@ -1,27 +1,9 @@
 # api-guidelines
 翻译自微软的Microsoft REST API Guidelines
-
+* 原文链接：https://github.com/Microsoft/api-guidelines/blob/vNext/Guidelines.md
 
 
 # Microsoft REST API Guidelines
-
-
-
-## Microsoft REST API Guidelines Working Group
-
-
-
-|                              |                                        |                                          |
-
-|:-----------------------------|:---------------------------------------|:-----------------------------------------|
-
-| Dave Campbell (CTO C+E)      | Rick Rashid (CTO ASG)                  | John Shewchuk (Technical Fellow, TED HQ) |
-
-| Mark Russinovich (CTO Azure) | Steve Lucco (Technical Fellow, DevDiv) | Murali Krishnaprasad (Azure App Plat)    |
-
-| Rob Howard (ASG)             | Peter Torr  (OSG)                      | Chris Mullins (ASG)                      |
-
-
 
 <div style="font-size:150%">
 
