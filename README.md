@@ -694,3 +694,95 @@ An example of a URL containing a canonical identifier is:
 https://api.contoso.com/v1.0/people/7011042402/inbox
 
 ```
+
+### 7.4 Supported methods 支持的方法
+Operations MUST use the proper HTTP methods whenever possible, and operation idempotency MUST be respected.
+HTTP methods are frequently referred to as the HTTP verbs.
+
+操作**必须**尽可能使用正确的 HTTP 方法，且**必须**遵守操作幂等。
+HTTP 方法又通常被称为 HTTP 动词。
+The terms are synonymous in this context, however the HTTP specification uses the term method.
+这些术语在这种情况下是同义词，但 HTTP 规范了使用术语的方法。
+
+Below is a list of methods that Microsoft REST services SHOULD support.
+下面是 Microsoft REST Service **应该**支持的方法列表。
+Not all resources will support all methods, but all resources using the methods below MUST conform to their usage.
+并非所有资源都支持所有方法，但使用下面方法的所有资源**必须**遵从下面的用法。
+
+Method 方法  | Description 描述                                                                                                                | Is Idempotent 是否幂等
+------- | -------------------------------------------------------------------------------------------------------------------------- | -------------
+GET     | Return the current value of an object<br>返回对象的当前值                                                                                      | True
+PUT     | Replace an object, or create a named object, when applicable<br>替换对象，或在适用时创建一个命名对象                                                               | True
+DELETE  | Delete an object<br>删除对象                                                                                                           | True
+POST    | Create a new object based on the data provided, or submit a command<br>根据提供的数据创建一个新对象，或提交一个命令                                                        | False
+HEAD    | Return metadata of an object for a GET response. Resources that support the GET method MAY support the HEAD method as well<br>为 GET 响应返回对象的元数据。支持 GET 方法的资源也**可以**支持 HEAD 方法 | True
+PATCH   | Apply a partial update to an object<br>对对象应用部分更新                                                                                        | False
+OPTIONS | Get information about a request; see below for details.<br>获取有关 Request 的信息；详见下文。                                                                    | True
+
+<small>Table 1</small>
+
+#### 7.4.1 POST
+POST operations SHOULD support the Location response header to specify the location of any created resource that was not explicitly named, via the Location header.
+POST 操作**应该**支持 Location 响应 header，通过 Location 响应 header 指定任何未明确命名的已创建资源的位置。
+
+As an example, imagine a service that allows creation of hosted servers, which will be named by the service:
+例如，一个 service 允许创建并命名托管服务器：
+
+```http
+POST http://api.contoso.com/account1/servers
+```
+
+The response would be something like:
+响应将会是这个样子：
+
+```http
+201 Created
+Location: http://api.contoso.com/account1/servers/server321
+```
+
+Where "server321" is the service-allocated server name.
+“server321” 是 service 创建的托管服务器的名称。
+
+Services MAY also return the full metadata for the created item in the response.
+Services 也可以在响应中返回创建项的完整元数据。
+
+#### 7.4.2 PATCH
+PATCH has been standardized by IETF as the method to be used for updating an existing object incrementally (see [RFC 5789][rfc-5789]).
+PATCH 已经被 IETF 标准化为递进式更新现有对象的方法(参考 [RFC 5789][rfc-5789])。
+Microsoft REST API Guidelines compliant APIs SHOULD support PATCH.
+符合 Microsoft REST API 指南的 API **应该**支持 PATCH 方法。
+
+#### 7.4.3 Creating resources via PATCH (UPSERT semantics) 通过 PATCH 创建资源（UPSERT 语义）
+Services that allow callers to specify key values on create SHOULD support UPSERT semantics, and those that do MUST support creating resources using PATCH.
+允许调用者在创建资源时指定 key 的 service **应该**支持 UPSERT 语义，可以这样做的 service 也**必须**支持通过 PATCH 创建资源。
+Because PUT is defined as a complete replacement of the content, it is dangerous for clients to use PUT to modify data.
+因为 PUT 被定义为完全替换原数据，所以客户端直接使用 PUT 修改数据很危险。
+Clients that do not understand (and hence ignore) properties on a resource are not likely to provide them on a PUT when trying to update a resource, hence such properties could be inadvertently removed.
+当对资源属性不了解的客户端试图通过 PUT 更新数据时，由于对属性不了解，很可能忽略了某些属性，进而导致这些属性被无意删除。
+Services MAY optionally support PUT to update existing resources, but if they do they MUST use replacement semantics (that is, after the PUT, the resource's properties MUST match what was provided in the request, including deleting any server properties that were not provided).
+Service 可以支持 PUT 更新现有资源，但**必须**使用替换语义（也就是说，在 PUT 后，资源的所有属性**必须**与请求中提供的内容相匹配，包括删除所有未提供的服务端属性）。
+
+Under UPSERT semantics, a PATCH call to a nonexistent resource is handled by the server as a "create," and a PATCH call to an existing resource is handled as an "update." To ensure that an update request is not treated as a create or vice-versa, the client MAY specify precondition HTTP headers in the request.
+在 UPSERT 语义下，对不存在资源 PATCH 调用时服务器作为“create”来处理，对现有资源 PATCH 调用时服务器作为“update”来处理。为了确保 update 请求不被视为 create（反之亦然），客户端**可以**在请求中指定预先配置的 HTTP headers。
+The service MUST NOT treat a PATCH request as an insert if it contains an If-Match header and MUST NOT treat a PATCH request as an update if it contains an If-None-Match header with a value of "*".
+如果一个 PATCH 请求包含一个 If-Match header，那么 service **绝不能**把这个 PATCH 请求当做 insert，并且如果它包含一个值为“*”的 If-None-Match header，则**不能**将该 PATCH 请求当做 update。
+
+If a service does not support UPSERT, then a PATCH call against a resource that does not exist MUST result in an HTTP "409 Conflict" error.
+如果 service 不支持 UPSERT，那么对不存在资源的 PATCH 调用**必须**导致 HTTP "409 Conflict" 错误。
+
+#### 7.4.4 Options and link headers
+OPTIONS allows a client to retrieve information about a resource, at a minimum by returning the Allow header denoting the valid methods for this resource.
+OPTIONS 允许客户端检索有关资源的信息，至少可以返回表示该资源的有效方法的 Allow header。
+
+In addition, services SHOULD include a Link header (see [RFC 5988][rfc-5988]) to point to documentation for the resource in question:
+此外, service **应该**包括 Link header (参考 [RFC 5988][rfc-5988]) 以指向有关的文档资源：
+
+```http
+Link: <{help}>; rel="help"
+```
+
+Where {help} is the URL to a documentation resource.
+其中 {help} 是文档资源的 URL.
+
+For examples on use of OPTIONS, see [preflighting CORS cross-domain calls][cors-preflight].
+有关使用 OPTIONS 的示例，请参考 [preflighting CORS cross-domain calls][cors-preflight]。
